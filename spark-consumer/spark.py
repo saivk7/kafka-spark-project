@@ -3,7 +3,7 @@ from pyspark.sql import functions as func
 from pyspark.sql.types import StructType,StructField, StringType, IntegerType,ArrayType
 #for kafkaf stream
 
-def startSpark(topic_name,bootstrap_server):
+def startSpark(topic_name,bootstrap_server,mongoConnectionURL):
 
     spark = SparkSession.builder \
             .master("local[*]") \
@@ -60,7 +60,7 @@ def startSpark(topic_name,bootstrap_server):
             StructField("group_name",StringType(),True),
             StructField("group_lon",StringType(),True),
             StructField("group_urlname",StringType(),True),
-            StructField("group_stats",StringType(),True),
+            StructField("group_state",StringType(),True),
             StructField("group_lat",StringType(),True)
         ]))
 
@@ -69,18 +69,18 @@ def startSpark(topic_name,bootstrap_server):
 
     meetup_rsvp_df_1 = meetup_rsvp_df.selectExpr("CAST(value AS STRING)", "CAST(timestamp AS TIMESTAMP)")
 
-    meetup_rsvp_df_2 = meetup_rsvp_df_1.select(func.from_json(func.col("value"),meetup_rsvp_schema).alias("message_deatils"),func.col("timestamp"))
+    meetup_rsvp_df_2 = meetup_rsvp_df_1.select(func.from_json(func.col("value"),meetup_rsvp_schema).alias("message_details"),func.col("timestamp"))
     
     print("df2 schema is \n")
     meetup_rsvp_df_2.printSchema()
 
-    meetup_rsvp_df_3  = meetup_rsvp_df_2.select(func.col("mesage_detail.*"),func.col("timestamp"))
+    meetup_rsvp_df_3  = meetup_rsvp_df_2.select(func.col("message_details.*"),func.col("timestamp"))
 
     print("df3 schema is \n")
     meetup_rsvp_df_3.printSchema()
 
 
-    meetup_rsvp_df_4 = meetup_rsvp_df_3.select(func.col("group.group_name"), func.col("group.group_country"),func.col("group.group_state"),func.col("group.group.city"),
+    meetup_rsvp_df_4 = meetup_rsvp_df_3.select(func.col("group.group_name"), func.col("group.group_country"),func.col("group.group_state"),func.col("group.group_city"),
     func.col("group.group_lat"),func.col("group.group_lon"), func.col("group.group_id"),func.col("group.group_topics"),func.col("member.member_name"),
     func.col("guests"),func.col("response"),func.col("venue.venue_name"),func.col("venue.lon"),func.col("venue.lat"), func.col("venue.venue_id"), func.col("visibility"),
     func.col("member.member_id"), func.col("event.event_name"), func.col("event.event_id"), func.col("event.time"), func.col("event.event_url")
@@ -93,7 +93,7 @@ def startSpark(topic_name,bootstrap_server):
     # writing stream to database
 
 
-    
+    print("All Data Frames are correct, proceed to db connection")
 
     spark.stop()
     
@@ -113,7 +113,7 @@ def main():
 
     print('at main')
     topic_name = 'meetup-rsvp'
-    bootstrap_server = '127.0.0.1:9092'
+    bootstrap_server = 'localhost:9092'
 
     #my sql and mogodb 
 
@@ -128,14 +128,6 @@ def main():
     mongoConnectionURL = "mongodb+srv://doadmin:152S7tVqBuG643y0@db-mongodb-nyc3-66302-forspark-ff47336e.mongo.ondigitalocean.com/admin?authSource=admin&tls=true&tlsCAFile=%3Creplace-with-path-to-CA-cert%3E"
 
     startSpark(topic_name,bootstrap_server,mongoConnectionURL)
-
-
-
-
-
-
-
-
 
 
 
