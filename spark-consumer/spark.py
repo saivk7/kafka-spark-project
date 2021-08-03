@@ -1,30 +1,14 @@
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as func
-from pyspark.sql.types import StructType,StructField, StringType, IntegerType,ArrayType
+from pyspark.sql.types import StructType,StructField, StringType, IntegerType,DoubleType,ArrayType
 #for kafkaf stream
 
-def startSpark(topic_name,bootstrap_server,mongoConnectionURL):
-
-    spark = SparkSession.builder \
-            .master("local[*]") \
-            .appName("Meetup Stream Processing app") \
-            .getOrCreate()
-
-    # setting log to error only
-    spark.sparkContext.setLogLevel("Error")
-
-    meetup_rsvp_df = spark \
-                .readStream \
-                .format("kafka") \
-                .option("kafka.bootstrap.servers", bootstrap_server) \
-                .option("subscribe", topic_name) \
-                .option("startingOffsets","latest") \
-                .load()
-
-    print("Priting the schema from the meetup_df \n ")
-    meetup_rsvp_df.printSchema()
 
 
+
+
+
+def getSchema():
     meetup_rsvp_schema = StructType([
         StructField("venue",StructType([ 
             StructField("venue_name",StringType(), True),
@@ -63,13 +47,59 @@ def startSpark(topic_name,bootstrap_server,mongoConnectionURL):
             StructField("group_state",StringType(),True),
             StructField("group_lat",StringType(),True)
         ]))
-
-
     ])
 
-    meetup_rsvp_df_1 = meetup_rsvp_df.selectExpr("CAST(value AS STRING)", "CAST(timestamp AS TIMESTAMP)")
+    return meetup_rsvp_schema
 
-    meetup_rsvp_df_2 = meetup_rsvp_df_1.select(func.from_json(func.col("value"),meetup_rsvp_schema).alias("message_details"),func.col("timestamp"))
+
+# writing into postgres for each dataframe returned from stream writer
+jdbcURL = "jdbc:postgresql://localhost/meetup"
+postgresProps = dict()
+postgresProps["user"]  = "postgres"
+postgresProps["password"]="password"
+postgresProps["driver"] = "org.postgresql.Driver"
+
+def forEachBatchFunc(batchDF , batchID):
+    print("URL " , jdbcURL)
+    print("props" , postgresProps)
+    print("batch process done with id:" , batchID)
+    print("\n \n \n" )
+    batchDF_1 = batchDF.withColumn("batch_id",func.lit(batchID))
+    batchDF_1.write.jdbc(url=jdbcURL, table="meetup_rsvp" , mode="append",properties=postgresProps)
+    
+    batchDF_1.show()
+
+
+def startSpark(topic_name,bootstrap_server,mongoConnectionURL):
+
+    spark = SparkSession.builder \
+            .master("local[*]") \
+            .appName("Meetup Stream Processing app") \
+            .config("spark.jars","./postgresJars/postgresql-42.2.23.jar")\
+            .getOrCreate()
+
+    # setting log to error only
+    spark.sparkContext.setLogLevel("Error")
+
+    meetup_rsvp_df = spark \
+                .readStream \
+                .format("kafka") \
+                .option("kafka.bootstrap.servers", bootstrap_server) \
+                .option("subscribe", topic_name) \
+                .option("startingOffsets","latest") \
+                .load()
+
+    print("Priting the schema from the meetup_df \n ")
+    meetup_rsvp_df.printSchema()
+
+
+    meetup_rsvp_df_1 = meetup_rsvp_df.selectExpr("CAST(value AS STRING)", "CAST(timestamp AS TIMESTAMP)")
+    
+    print("df1 schema is \n")
+    meetup_rsvp_df_1.printSchema()
+
+    schema = getSchema()
+    meetup_rsvp_df_2 = meetup_rsvp_df_1.select(func.from_json(func.col("value"),schema ).alias("message_details"),func.col("timestamp"))
     
     print("df2 schema is \n")
     meetup_rsvp_df_2.printSchema()
@@ -92,18 +122,41 @@ def startSpark(topic_name,bootstrap_server,mongoConnectionURL):
 
     # writing stream to database
 
+    """ meetup_rsvp_df_4.writeStream\
+        # every batch will be triggered once in 30 sec
+        .trigger(Trigger.ProcessingTime(30)) \
+        
+        .outputMode("update")
+        
+        .foreachBatch() 
+        
+    """
+
+    """
+    Aggregation logic and writing to postgres
+
+    """
+
+    meetup_rsvp_df_5  = meetup_rsvp_df_4.groupBy(func.col("group_name"),func.col("group_country"), func.col("group_state"),func.col("group_city"), (func.col("group_lat").cast(DoubleType())).alias("group_lat"), (func.col("group_lon").cast(DoubleType())).alias("group_lon"), func.col("response")).agg(func.count(func.col("response")).alias("response_count"))
+
+    print("df5 which has aggregates schema")
+    meetup_rsvp_df_5.printSchema()
 
     print("All Data Frames are correct, proceed to db connection")
 
+    query = meetup_rsvp_df_5\
+        .writeStream\
+        .trigger(processingTime="10 seconds")\
+        .outputMode("update")\
+        .foreachBatch(forEachBatchFunc)\
+        .start()
+        #.format("console")\
+    
+    query.awaitTermination()
+
+
     spark.stop()
     
-
-    """ meetup_rsvp_df_4.writeStream\
-        .trigger(Trigger.ProcessingTime(30)) \
-        .outputMode("update")
-        .foreachBatch() """
-
-
     
     pass
 
@@ -126,6 +179,14 @@ def main():
     protocol = 'mongodb+srv'
 
     mongoConnectionURL = "mongodb+srv://doadmin:152S7tVqBuG643y0@db-mongodb-nyc3-66302-forspark-ff47336e.mongo.ondigitalocean.com/admin?authSource=admin&tls=true&tlsCAFile=%3Creplace-with-path-to-CA-cert%3E"
+
+
+    username = 'postgres'
+    password = 'password'
+    host = 'MY_IP'
+    port = 5432
+    database = 'meetup'
+    protocol = 'postgres'
 
     startSpark(topic_name,bootstrap_server,mongoConnectionURL)
 
