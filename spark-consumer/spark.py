@@ -52,8 +52,9 @@ def getSchema():
     return meetup_rsvp_schema
 
 
+
 # writing into postgres for each dataframe returned from stream writer
-jdbcURL = "jdbc:postgresql://localhost/meetup"
+jdbcURL = "jdbc:postgresql://159.203.106.107/meetup"
 postgresProps = dict()
 postgresProps["user"]  = "postgres"
 postgresProps["password"]="password"
@@ -65,10 +66,10 @@ def forEachBatchFunc(batchDF , batchID):
     print("batch process done with id:" , batchID)
     print("\n \n \n" )
     batchDF_1 = batchDF.withColumn("batch_id",func.lit(batchID))
-    batchDF_1.write.jdbc(url=jdbcURL, table="meetup_rsvp" , mode="append",properties=postgresProps)
+    batchDF_1.write.jdbc(url=jdbcURL, table="meetup_table" , mode="append",properties=postgresProps)
     
     batchDF_1.show()
-
+   
 
 def startSpark(topic_name,bootstrap_server,mongoConnectionURL):
 
@@ -139,14 +140,20 @@ def startSpark(topic_name,bootstrap_server,mongoConnectionURL):
 
     meetup_rsvp_df_5  = meetup_rsvp_df_4.groupBy(func.col("group_name"),func.col("group_country"), func.col("group_state"),func.col("group_city"), (func.col("group_lat").cast(DoubleType())).alias("group_lat"), (func.col("group_lon").cast(DoubleType())).alias("group_lon"), func.col("response")).agg(func.count(func.col("response")).alias("response_count"))
 
-    print("df5 which has aggregates schema")
-    meetup_rsvp_df_5.printSchema()
+    meetup_rsvp_df_6 = meetup_rsvp_df_4.groupBy(func.col("event_name"), func.col("event_url"), func.col("time").alias("event_time") , func.col("group_name"),func.col("group_country"), func.col("group_state"),func.col("group_city"), (func.col("group_lat").cast(DoubleType())).alias("group_lat"), (func.col("group_lon").cast(DoubleType())).alias("group_lon"), (func.col("lat").cast(DoubleType())).alias("lat"),  (func.col("lon").cast(DoubleType())).alias("lon"), func.col("response")).agg(func.count(func.col("response")).alias("response_count"))
+    
+    print("df6 which has aggregates schema")
+    meetup_rsvp_df_6.printSchema()
+
+    
+    
 
     print("All Data Frames are correct, proceed to db connection")
 
-    query = meetup_rsvp_df_5\
+    # start the streaming query and write to database in batches of time = processingTime
+    query = meetup_rsvp_df_6\
         .writeStream\
-        .trigger(processingTime="10 seconds")\
+        .trigger(processingTime="30 seconds")\
         .outputMode("update")\
         .foreachBatch(forEachBatchFunc)\
         .start()
@@ -157,9 +164,6 @@ def startSpark(topic_name,bootstrap_server,mongoConnectionURL):
 
     spark.stop()
     
-    
-    pass
-
 
 
 def main():
