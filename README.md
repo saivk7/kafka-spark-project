@@ -1,6 +1,8 @@
 # Kafka-Spark Project 
 
-Meetup streaming api : http://stream.meetup.com/2/rsvps
+An end to end data pipeline for processing data from Streaming Data Sources using Kafka, Spark and Spark Structured Streaming.
+ 
+-  Streaming api used : [ RSVP data from Meetup.com's streaming RSVP URL] (https://stream.meetup.com/2/rsvps "Meetup Streaming URL")
 
 ## Architecture
 
@@ -206,9 +208,9 @@ The BatchFunction looks like this
 batchDF_1.write.jdbc(url=jdbcURL, table="meetup_table" , mode="append",properties=postgresProps)
 ```
 
-- Example of the final table written into database: 
-```
+- Example of the final table written into database : 
 
+```
 +--------------------+--------------------+-------------+--------------------+-------------+-----------+-------------+---------+---------+---------+----------+--------+--------------+--------+
 |          event_name|           event_url|   event_time|          group_name|group_country|group_state|   group_city|group_lat|group_lon|      lat|       lon|response|response_count|batch_id|
 +--------------------+--------------------+-------------+--------------------+-------------+-----------+-------------+---------+---------+---------+----------+--------+--------------+--------+
