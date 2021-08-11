@@ -12,9 +12,14 @@ Spark: Structured Streaming to process the data from kafka, aggregating data usi
 
 Spark Structured Steaming API: For writing out the data streams to RDBMS/ NoSQL databases/datawarehouse like Hive/S3.
 
+
+
+
 ## Starting kafka-server:
 
-After following "setup.sh" , 
+Follow [setup.sh](./setup.sh) to setup Zookeeper and Kafka server
+Then, 
+
 To start zookeeper: 
 
 ```
@@ -32,6 +37,15 @@ Create a kafka topic using the command :
 ```
 kafka-topics.sh --bootstrap-server localhost:9092 --create --topic my-topic --partitions 3 --replication-factor 2
 ```
+
+
+## Starting Kafka-Producer
+
+The [Kafka-Producer](./kafka/producer.py) file gets the data from the streaming API/HTTP endpoint and persists the data in kafka for consumption from a Kafka-Consumer
+
+Specify the bootstrap server url in the Kakfa-Producer and the topic name to write the data into kafka. 
+
+
 ## Deploying Spark Application:
 
 'start' bash file: to deploy the spark driver program in the spark cluster
@@ -40,7 +54,7 @@ kafka-topics.sh --bootstrap-server localhost:9092 --create --topic my-topic --pa
 spark-submit --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.1.2 --jars ~/spark-project/postgresJars/postgresql-42.2.23.jar spark.py
 
 ```
-- [Deploying spark stuctured streaming applications using Jars] (https://spark.apache.org/docs/latest/structured-streaming-kafka-integration.html#deploying "Apache Spark Documentation" )
+- [Deploying spark stuctured streaming applications using Jars](https://spark.apache.org/docs/latest/structured-streaming-kafka-integration.html#deploying "Apache Spark Documentation" )
 
 ## Spark DataFrames
 
@@ -240,4 +254,4 @@ only showing top 20 rows
 ```
 
 
-- Reference: [ Spark Strucutred Streaming ] (https://spark.apache.org/docs/latest/structured-streaming-programming-guide.html)
+- Reference: [ Spark Strucutred Streaming ](https://spark.apache.org/docs/latest/structured-streaming-programming-guide.html)
