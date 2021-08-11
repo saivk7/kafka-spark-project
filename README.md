@@ -2,14 +2,14 @@
 
 Meetup streaming api : http://stream.meetup.com/2/rsvps
 
-# Architecture
+## Architecture
 
 Kafka : To persist the incoming streaming messages and deliver to spark application
 
 Spark: Structured Streaming to process the data from kafka and write to a RDBMS
 
 
-# Starting kafka-server:
+## Starting kafka-server:
 
 After following "setup.sh" , 
 To start zookeeper: 
@@ -29,7 +29,7 @@ Create a kafka topic using the command :
 ```
 kafka-topics.sh --bootstrap-server localhost:9092 --create --topic my-topic --partitions 3 --replication-factor 2
 ```
-# Deploying Spark Application:
+## Deploying Spark Application:
 
 'start' bash file: to deploy the spark driver program in the spark cluster
 
@@ -38,11 +38,39 @@ spark-submit --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.1.2 --jars 
 
 ```
 
-# Spark DataFrames
+## Spark DataFrames
 
 Spark consumes the data from the kafka-topic using kafka-consumer 
 
-First from the json message, we extract the schema to a DataFrame using the following code: 
+#### Reading from the kafka stream:
+
+Spark application reads steaming data from spark for futher processing
+```
+            df = spark \
+                .readStream \
+                .format("kafka") \
+                .option("kafka.bootstrap.servers", bootstrap_server) \
+                .option("subscribe", topic_name) \
+                .option("startingOffsets","latest") \
+                .load()
+```
+
+
+Then, spark converts the data into a df in the form:
+- The 'value' field contains the json messages from the kafka-stream
+
+```
+ |-- key: binary (nullable = true)
+ |-- value: binary (nullable = true)
+ |-- topic: string (nullable = true)
+ |-- partition: integer (nullable = true)
+ |-- offset: long (nullable = true)
+ |-- timestamp: timestamp (nullable = true)
+ |-- timestampType: integer (nullable = true)
+```
+
+
+We extract the schema from the json data for Schema Inference and inserting the data to DataFrames using the code below: 
 
 ```
 from pyspark.sql.types import StructType,StructField, StringType, IntegerType,DoubleType,ArrayType
@@ -88,21 +116,7 @@ schema = StructType([
     ])
 ```
 
-
-After deploying, spark converts the data into a df in the form:
-[The 'value' field contains the json messages]
-
-```
- |-- key: binary (nullable = true)
- |-- value: binary (nullable = true)
- |-- topic: string (nullable = true)
- |-- partition: integer (nullable = true)
- |-- offset: long (nullable = true)
- |-- timestamp: timestamp (nullable = true)
- |-- timestampType: integer (nullable = true)
-```
-
-The spark code deconstructs 'value' to the dataframe with columns  below: 
+Then, spark code deconstructs 'value' to the dataframe with columns below using the Schema Inference provided: 
 
 ```
 root
@@ -167,3 +181,8 @@ root
  |-- response_count: long (nullable = false)
 ```
 
+
+## Spark Structured Streaming: 
+Structured Streaming provides fast, scalable, fault-tolerant, end-to-end exactly-once stream processing without the user having to reason about streaming.
+
+- Reference: 
