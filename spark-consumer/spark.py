@@ -54,7 +54,7 @@ def getSchema():
 
 
 # writing into postgres for each dataframe returned from stream writer
-jdbcURL = "jdbc:postgresql://159.203.106.107/meetup"
+jdbcURL = "jdbc:postgresql://127.0.0.1/meetup"
 postgresProps = dict()
 postgresProps["user"]  = "postgres"
 postgresProps["password"]="password"

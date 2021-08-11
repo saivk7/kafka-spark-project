@@ -49,7 +49,7 @@ def main():
     topic_name = "meetup-rsvp"
     
     # kafka server address
-    bootstrap_server = '159.203.106.107:9092'
+    bootstrap_server = 'localhost:9092'
 
     startProducer(topic_name,bootstrap_server,URL)
 
