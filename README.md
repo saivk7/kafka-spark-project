@@ -2,7 +2,7 @@
 
 An end to end data pipeline for processing data from Streaming Data Sources using Kafka, Spark and Spark Structured Streaming.
  
--  Streaming api used : [ RSVP data from Meetup.com's streaming RSVP URL] (https://stream.meetup.com/2/rsvps "Meetup Streaming URL")
+-  Streaming api used : [RSVP data from Meetup.com's streaming RSVP URL](https://stream.meetup.com/2/rsvps "Meetup Streaming URL")
 
 ## Architecture
 
