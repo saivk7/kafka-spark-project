@@ -24,7 +24,7 @@ To start kafka-server
 ```
 
 Create a kafka topic using the command :
-note : setup partitioins and replication factor according to the bootstrap servers you're using or configure them in ./config/server.properites
+ - note : setup partitioins and replication factor according to the bootstrap servers you're using or configure them in ./config/server.properites
 
 ```
 kafka-topics.sh --bootstrap-server localhost:9092 --create --topic my-topic --partitions 3 --replication-factor 2
@@ -90,7 +90,7 @@ schema = StructType([
 
 
 After deploying, spark converts the data into a df in the form:
-The 'value' field contains the json messages
+[The 'value' field contains the json messages]
 
 ```
  |-- key: binary (nullable = true)
@@ -148,10 +148,8 @@ spark.sql.functions (groupBy,aggregate,alias,col,cast)
 ```
 final_df = df.groupBy(func.col("event_name"), func.col("event_url"), func.col("time").alias("event_time") , func.col("group_name"),func.col("group_country"), func.col("group_state"),func.col("group_city"), (func.col("group_lat").cast(DoubleType())).alias("group_lat"), (func.col("group_lon").cast(DoubleType())).alias("group_lon"), (func.col("lat").cast(DoubleType())).alias("lat"),  (func.col("lon").cast(DoubleType())).alias("lon"), func.col("response")).agg(func.count(func.col("response")).alias("response_count"))
 
-gives an output dataframe with the below schema: 
+gives an output dataframe with the below Final chema: 
 
-```
-Final schema:
 
 root
  |-- event_name: string (nullable = true)
