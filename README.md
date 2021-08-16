@@ -3,7 +3,7 @@
 An end to end data pipeline for processing data from Streaming Data Sources using Kafka, Spark and Spark Structured Streaming.
  
 -  Streaming api used : [RSVP data from Eventribe & Meetup.com's streaming RSVP URL](https://stream.meetup.com/2/rsvps "Meetup Streaming URL")
--  Live Demo of Front End : [Nearby App NodeJS & React](https://nearbyapp.netlify.app)
+-  Live Demo of Front End : [ Demo (Nearby App with NodeJS & React) ](https://nearbyapp.netlify.app)
 
 ## Architecture
 
